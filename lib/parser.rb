@@ -143,9 +143,9 @@ module Arbol
       clause('IDENT ASSIGN LBRACKET vector RBRACKET SEMICOLON') do |i, _, _, e, _, _|
         id = SecureRandom.hex(8)
         ThreeExp.new(
-          Variable.new([id, :openvector, i]),
+          Variable.new([id, :openvectordefinition, i]),
           OneExp.new(e),
-          Variable.new([id, :closevector, i])
+          Variable.new([id, :closevectordefinition, i])
         )
       end
       
@@ -388,10 +388,10 @@ def traversal(code_string)
   )
 end
  
-require 'pp'
-
-pp(
-  traversal(File.read(ARGV[0]))
-)
+# require 'pp'
+# 
+# pp(
+#   traversal(File.read(ARGV[0]))
+# )
 
 

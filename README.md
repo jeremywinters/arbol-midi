@@ -24,3 +24,12 @@
   * during optimization phase...
       * `one_time` = true if and only if all child expressions are true
  
+## Phases
+
+* lexer
+* parser
+* builder
+    * references
+    * 
+* optimizer
+* instructions
