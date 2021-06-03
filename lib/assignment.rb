@@ -5,6 +5,7 @@ module Arbol
   class BuilderAssignmentNode < BuilderNode
     include Arbol::TraversalActions::Openfunc
     include Arbol::TraversalActions::Ref
+    include Arbol::TraversalActions::Openvectorref
     include Arbol::TraversalActions::Closeassign
 
     attr_accessor :identifier
@@ -21,10 +22,6 @@ module Arbol
       # creates all named symbols, including vector references
       super
       create_symbol(@identifier, :variable)
-      
-      # variables get their memory location resolved in this pass
-      @mem_indx = get_data_indx(0)
-      set_symbol_mem_indx(@identifier, @mem_indx)
     end
     
     def resolve_data
@@ -32,11 +29,22 @@ module Arbol
       # insures every object which needs a referencable data location has one
       # also reserves additional data space as required by objects
       super
+      puts("symbol mem_indx: #{}")
+      set_symbol_mem_indx(@identifier, @expressions.first.mem_indx)
+    end
+    
+    def create_parameters
+      @expressions.each { |e| e.create_parameters }
+    end
+    
+    def resolve_static_flag
+      super
+      set_symbol_static(@identifier, @expressions.first.static)
     end
 
     def executable_instruction()
       @expressions.map { |e| e.executable_instruction() }
-      add_instruction(["INSTR_ASSIGN", @parameter_indx])
+      # add_instruction(["INSTR_ASSIGN", @parameter_indx])
     end
 
     def resolve
@@ -46,7 +54,8 @@ module Arbol
         identifier: @identifier,
         expressions: @expressions.map { |c| c.resolve },
         mem_indx: @mem_indx,
-        parameter_indx: @parameter_indx
+        parameter_indx: @parameter_indx,
+        static: @static
       }
     end
   end

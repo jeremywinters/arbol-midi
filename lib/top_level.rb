@@ -6,6 +6,7 @@ require_relative 'function_definition.rb'
 require_relative 'function.rb'
 require_relative 'ref.rb'
 require_relative 'vector_definition.rb'
+require_relative 'vector_ref.rb'
 
 module Arbol
   class BuilderTopLevelNode < BuilderNode
@@ -50,6 +51,10 @@ module Arbol
       @executable.map { |a| a.resolve_data }
     end
     
+    def resolve_static_flag
+      @executable.map { |a| a.resolve_static_flag }
+    end
+        
     def create_parameters()
       @executable.map { |e| e.create_parameters }
     end

@@ -36,16 +36,23 @@ b.build(
 
 b.tree.create_symbols
 b.tree.resolve_data
-b.tree.create_parameters()
-b.tree.executable_instruction()
+b.tree.create_parameters
+b.tree.resolve_static_flag
+b.tree.executable_instruction
 
-pp(b.tree.resolve, width = 4)
-b.tree.data.each_with_index { |e, i| puts("symbols[#{i}] = #{e};") }
-b.tree.parameters.each_with_index { |e, i| puts("params[#{i}] = #{e};") }
+pp(b.tree.resolve)
+pp(b.tree.symbols)
+
+f = File.open('arbol_tmp.rb', 'w')
+
+f.puts("void load_program() {")
+b.tree.data.each_with_index { |e, i| f.puts("symbols[#{i}] = #{e};") }
+b.tree.parameters.each_with_index { |e, i| f.puts("params[#{i}] = #{e};") }
 b.tree.instructions.each_with_index do |e, i|
-  puts("instruction[#{i}][0]=#{e[0]}; instruction[#{i}][1]=#{e[1]};")
+  f.puts("instruction[#{i}][0]=#{e[0]}; instruction[#{i}][1]=#{e[1]}; instruction[#{i}][2]=#{e[2]};")
 end
-puts("num_instructions = #{b.tree.instructions.length};")
+f.puts("num_instructions = #{b.tree.instructions.length};")
+f.puts("}")
 
 #t = Arbol::BuilderTopLevelNode.new(b.tree.resolve)
 

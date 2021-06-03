@@ -22,6 +22,11 @@ module Arbol
       super
     end
     
+    def resolve_static_flag
+      super
+      @static_flag = false # actions must always run,
+    end
+    
     def resolve_data
       # creates deduped constant value entries (that can be reused)
       # insures every object which needs a referencable data location has one
@@ -37,7 +42,7 @@ module Arbol
 
     def executable_instruction()
       @expressions.map { |e| e.executable_instruction() }
-      add_instruction([function_to_instruction(@identifier)[:instr], @parameter_indx])
+      add_instruction([function_to_instruction(@identifier)[:instr], @parameter_indx, static_as_int])
     end
 
     def resolve
@@ -47,7 +52,8 @@ module Arbol
         identifier: @identifier,
         expressions: @expressions.map { |c| c.resolve },
         mem_indx: @mem_indx,
-        parameter_indx: @parameter_indx
+        parameter_indx: @parameter_indx,
+        static: @static
       }
     end
   end

@@ -52,13 +52,14 @@ module Arbol
           instruction[0],
           instruction[2]
         )
+        set_current_object(@expressions.last)
       end
     end
 
     # configured as module for mix-in
     module Closevectorref
       # @param [Array] instruction
-      def closevectorref
+      def closevectorref(instruction)
         set_current_object(@parent)
       end
     end

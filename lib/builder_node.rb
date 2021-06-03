@@ -23,6 +23,9 @@ module Arbol
     # array of additional indices required
     attr_accessor :additional_indx
     
+    # whether or not this object is single execution only
+    attr_accessor :static
+    
     # set parent object
     # @param [Object] parent
     def initialize(parent)
@@ -64,7 +67,10 @@ module Arbol
         
         when instruction[1] == :openvectordefinition then openvectordefinition(instruction)
         when instruction[1] == :closevectordefinition then closevectordefinition(instruction)
-        
+
+        when instruction[1] == :openvectorref then openvectorref(instruction)
+        when instruction[1] == :closevectorref then closevectorref(instruction)
+            
         when instruction[1] == :opendef then opendef(instruction)
         when instruction[1] == :openfuncbody then openfuncbody(instruction)
         when instruction[1] == :closefuncbody then closefuncbody(instruction)
@@ -97,6 +103,20 @@ module Arbol
       # insures every object which needs a referencable data location has one
       # also reserves additional data space as required by objects
       @expressions.map { |a| a.resolve_data }
+    end
+
+    def resolve_static_flag
+      @expressions.each { |e| e.resolve_static_flag }
+      flags = @expressions.map { |e| e.static} || []
+      if flags.include?(false)
+        @static = false
+      else
+        @static = true
+      end
+    end
+    
+    def static_as_int
+      return (@static == true) ? 1 : 0
     end
 
     # provisions a data indx with a default value
@@ -165,6 +185,14 @@ module Arbol
         @parent.set_symbol_mem_indx(identifier, data_indx)
       end
     end
+    
+    def set_symbol_static(identifier, static_flag)
+      if(@symbols)
+        symbols[identifier][:static] = static_flag
+      else
+        @parent.set_symbol_static(identifier, static_flag)
+      end
+    end   
 
     def validate_params
       puts("inside validate_params")
@@ -179,7 +207,7 @@ module Arbol
       
       params = []
       if @expressions
-        @expressions.map { |e| e.create_parameters }
+        @expressions.each { |e| e.create_parameters }
         @expressions.each { |e| params << e.mem_indx }
       end
 
@@ -223,54 +251,57 @@ module Arbol
 
     def function_to_instruction(function_name)
       return {
-        "add" => {instr: "INSTR_ADD", param_count: 2},
-        "subtract" => {instr: "INSTR_SUBTRACT", param_count: 2},
-        "mult" => {instr: "INSTR_MULTIPLY", param_count: 2},
-        "divide" => {instr: "INSTR_DIVIDE", param_count: 2},
-        "modulo" => {instr: "INSTR_MODULO", param_count: 2},
+        "add" => {instr: "INSTR_ADD", param_count: 2, volatile: false},
+        "subtract" => {instr: "INSTR_SUBTRACT", param_count: 2, volatile: false},
+        "mult" => {instr: "INSTR_MULTIPLY", param_count: 2, volatile: false},
+        "divide" => {instr: "INSTR_DIVIDE", param_count: 2, volatile: false},
+        "modulo" => {instr: "INSTR_MODULO", param_count: 2, volatile: false},
 
-        "equals" => {instr: "INSTR_EQUALS", param_count: 2},
-        "ne" => {instr: "INSTR_NE", param_count: 2},
-        "gt" => {instr: "INSTR_GT", param_count: 2},
-        "gtequals" => {instr: "INSTR_GTEQUALS", param_count: 2},
-        "lt" => {instr: "INSTR_LT", param_count: 2},
-        "ltequals" => {instr: "INSTR_LTEQUALS", param_count: 2},     
+        "equals" => {instr: "INSTR_EQUALS", param_count: 2, volatile: false},
+        "ne" => {instr: "INSTR_NE", param_count: 2, volatile: false},
+        "gt" => {instr: "INSTR_GT", param_count: 2, volatile: false},
+        "gtequals" => {instr: "INSTR_GTEQUALS", param_count: 2, volatile: false},
+        "lt" => {instr: "INSTR_LT", param_count: 2, volatile: false},
+        "ltequals" => {instr: "INSTR_LTEQUALS", param_count: 2, volatile: false},     
         
-        "pow" => {instr: "INSTR_POW", param_count: 2},
-        "sin" => {instr: "INSTR_SIN", param_count: 1},
-        "cos" => {instr: "INSTR_COS", param_count: 1},
-        "tan" => {instr: "INSTR_TAN", param_count: 1},
-        "atan" => {instr: "INSTR_ATAN", param_count: 1},
+        "pow" => {instr: "INSTR_POW", param_count: 2, volatile: false},
+        "sin" => {instr: "INSTR_SIN", param_count: 1, volatile: false},
+        "cos" => {instr: "INSTR_COS", param_count: 1, volatile: false},
+        "tan" => {instr: "INSTR_TAN", param_count: 1, volatile: false},
+        "atan" => {instr: "INSTR_ATAN", param_count: 1, volatile: false},
         
-        "sqrt" => {instr: "INSTR_SQRT", param_count: 1},
+        "sqrt" => {instr: "INSTR_SQRT", param_count: 1, volatile: false},
         
-        "abs" => {instr: "INSTR_ABS", param_count: 1},
-        "exp" => {instr: "INSTR_EXP", param_count: 1},
-        "log" => {instr: "INSTR_LOG", param_count: 1},
-        "log10" => {instr: "INSTR_LOG10", param_count: 1},
-        "round" => {instr: "INSTR_ROUND", param_count: 1},
+        "abs" => {instr: "INSTR_ABS", param_count: 1, volatile: false},
+        "exp" => {instr: "INSTR_EXP", param_count: 1, volatile: false},
+        "log" => {instr: "INSTR_LOG", param_count: 1, volatile: false},
+        "log10" => {instr: "INSTR_LOG10", param_count: 1, volatile: false},
+        "round" => {instr: "INSTR_ROUND", param_count: 1, volatile: false},
 
-        "phasor" => {instr: "INSTR_PHASOR", param_count: 1},
-        "midi_cc" => {instr: "INSTR_MIDI_CC", param_count: 3},
-        "square" => {instr: "INSTR_SQUARE", param_count: 2},
+        "phasor" => {instr: "INSTR_PHASOR", param_count: 1, volatile: true},
+        "midi_cc" => {instr: "INSTR_MIDI_CC", param_count: 3, volatile: true},
+        "square" => {instr: "INSTR_SQUARE", param_count: 2, volatile: true},
         
-        "millis" => {instr: "INSTR_MILLIS", param_count: 0},
-        "micros" => {instr: "INSTR_MICROS", param_count: 0},
-        "pi" => {instr: "INSTR_PI", param_count: 0},
-        "twopi" => {instr: "INSTR_TWOPI", param_count: 0},
+        "millis" => {instr: "INSTR_MILLIS", param_count: 0, volatile: true},
+        "micros" => {instr: "INSTR_MICROS", param_count: 0, volatile: true},
+        "pi" => {instr: "INSTR_PI", param_count: 0, volatile: false},
+        "twopi" => {instr: "INSTR_TWOPI", param_count: 0, volatile: false},
         
-        "choose" => {instr: "INSTR_CHOOSE", param_count: 3},
-        "between" => {instr: "INSTR_BETWEEN", param_count: 3},
+        "choose" => {instr: "INSTR_CHOOSE", param_count: 3, volatile: false},
+        "between" => {instr: "INSTR_BETWEEN", param_count: 3, volatile: false},
         
-        "ez_sin" => {instr: "INSTR_EZSIN", param_count: 1},
-        "ez_cos" => {instr: "INSTR_EZCOS", param_count: 1},
+        "ez_sin" => {instr: "INSTR_EZSIN", param_count: 1, volatile: false},
+        "ez_cos" => {instr: "INSTR_EZCOS", param_count: 1, volatile: false},
 
-        "random" => {instr: "INSTR_RANDOM", param_count: 0},
-        "sah" => {instr: "INSTR_SAH", param_count: 2},
-        "constrain" => {instr: "INSTR_CONSTRAIN", param_count: 3},
-        "edge" => {instr: "INSTR_EDGE", param_count: 2},
-        "feedback" => {instr: "INSTR_FEEDBACK", param_count: 2},
-        "midi_note" => {instr: "INSTR_MIDI_NOTE", param_count: 4}
+        "random" => {instr: "INSTR_RANDOM", param_count: 0, volatile: true},
+        "sah" => {instr: "INSTR_SAH", param_count: 2, volatile: false},
+        "constrain" => {instr: "INSTR_CONSTRAIN", param_count: 3, volatile: false},
+        "edge" => {instr: "INSTR_EDGE", param_count: 2, volatile: true},
+        "feedback" => {instr: "INSTR_FEEDBACK", param_count: 2, volatile: true},
+        "midi_note" => {instr: "INSTR_MIDI_NOTE", param_count: 4, volatile: true},
+        "input" => {instr: "INSTR_INPUT", param_count: 1, volatile: true},
+        "fancy_phasor" => {instr: "INSTR_FANCY_PHASOR", param_count: 2, volatile: true},
+        "flip_flop" => {instr: "INSTR_FLIP_FLOP", param_count: 2, volatile: true}
       }[function_name]
     end
 

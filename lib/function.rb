@@ -37,7 +37,21 @@ module Arbol
         if functions_types_with_additional_indx.include?(@function_type)
           @additional_indx << get_data_indx(0.0)
         end
+        
+        if ['fancy_phasor'].include?(@function_type)
+          3.times { @additional_indx << get_data_indx(0.0) }
+        end
         @mem_indx = get_data_indx(0.0)
+      end
+    end
+
+    def resolve_static_flag
+      super
+      if ['const'].include?(@function_type)
+        @static = true
+        puts("const trace for resolve_static_flag: #{@static}")
+      elsif (function_to_instruction(@function_type)[:volatile] == true)
+        @static = false
       end
     end
 
@@ -46,12 +60,12 @@ module Arbol
       if ['const'].include?(@function_type)
         nil
       else
-        add_instruction([function_to_instruction(@function_type)[:instr], @parameter_indx])
+        add_instruction([function_to_instruction(@function_type)[:instr], @parameter_indx, static_as_int])
       end
     end
     
     def functions_types_with_additional_indx
-      ['sah', 'edge', 'feedback']
+      ['sah', 'edge', 'feedback', 'flip_flop']
     end
     
     def validate_params()
@@ -73,7 +87,9 @@ module Arbol
         expressions: @expressions.map { |c| c.resolve },
         value: @value,
         mem_indx: @mem_indx,
-        parameter_indx: @parameter_indx
+        additional_indx: @additional_indx,
+        parameter_indx: @parameter_indx,
+        static: @static
       }
     end
   end

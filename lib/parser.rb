@@ -41,6 +41,10 @@ module Arbol
     rule(/\d+\.+\d*/) { |t| [:FLOAT, t.to_f] }
     rule(/\d*\.+\d+/) { |t| [:FLOAT, t.to_f] }
 
+    rule(/\-\d+/) { |t| [:INTEGER, t.to_i] }
+    rule(/\-\d+\.+\d*/) { |t| [:FLOAT, t.to_f] }
+    rule(/\-\d*\.+\d+/) { |t| [:FLOAT, t.to_f] }
+    
     # whitespace
     rule(/\s/)
 
